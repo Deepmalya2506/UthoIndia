@@ -28,3 +28,26 @@ async def upload_file(file: UploadFile = File(...)):
     blob.upload_from_string(contents, content_type=file.content_type)
 
     return {"message": f"File '{blob_name}' uploaded successfully to {bucket_name}"}
+
+from google.cloud import pubsub_v1
+import json
+
+# Initialize Pub/Sub publisher
+publisher = pubsub_v1.PublisherClient()
+topic_path = publisher.topic_path("uthoindia-43d2c", "doc-upload-trigger")
+
+@app.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
+    contents = await file.read()
+    blob_name = file.filename
+
+    # Upload to Cloud Storage
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(blob_name)
+    blob.upload_from_string(contents, content_type=file.content_type)
+
+    # Publish message to Pub/Sub
+    message_data = json.dumps({"filename": blob_name})
+    publisher.publish(topic_path, data=message_data.encode("utf-8"))
+
+    return {"message": f"File '{blob_name}' uploaded successfully to {bucket_name}"}
