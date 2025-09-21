@@ -4,3 +4,4 @@ pydantic
 google-cloud-storage
 python-multipart
 google-cloud-pubsub
+google-cloud-documentai
